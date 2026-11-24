@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2C1A12" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dr. Coffee Loans" />
+  <title>Doctor Coffee — Loan Tracker</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <main id="auth-view" class="auth-shell">
+    <div class="auth-card">
+      <div class="brand-hero">
+        <div class="brand-logo" aria-hidden="true">☕</div>
+        <h1>Doctor Coffee</h1>
+        <p class="brand-subtitle">Employee Loan Tracker</p>
+      </div>
+
+      <div id="config-warning" class="alert alert-warning hidden">
+        <strong>Setup required:</strong> Add your Firebase project credentials in
+        <code>firebase-config.js</code> before signing in.
+      </div>
+
+      <div id="auth-tabs" class="segmented-tabs" role="tablist">
+        <button id="tab-signin" type="button" class="tab-btn active" role="tab" aria-selected="true">
+          Employee Login
+        </button>
+        <button id="tab-signup" type="button" class="tab-btn" role="tab" aria-selected="false">
+          Create Account
+        </button>
+      </div>
+
+      <form id="auth-form" novalidate>
+        <div id="signup-name-group" class="form-group hidden">
+          <label for="auth-fullname">Full Name (Displayed on Loans)</label>
+          <input
+            id="auth-fullname"
+            type="text"
+            autocomplete="name"
+            placeholder="e.g. Sara Mansour"
+            maxlength="40"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="auth-username">Username</label>
+          <input
+            id="auth-username"
+            type="text"
+            autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false"
+            placeholder="e.g. sara"
+            required
+          />
+          <small class="field-hint">Use your assigned employee username (or email).</small>
+        </div>
+
+        <div class="form-group">
+          <label for="auth-password">Password</label>
+          <div class="password-wrap">
+            <input
+              id="auth-password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="Enter password"
+              minlength="6"
+              required
+            />
+            <button id="auth-toggle-password" type="button" class="icon-btn" aria-label="Show password">
+              👁
+            </button>
+          </div>
+        </div>
+
+        <div id="auth-error" class="alert alert-error hidden" role="alert"></div>
+
+        <button id="auth-submit-btn" type="submit" class="btn btn-primary btn-full">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <div id="app-view" class="app-shell hidden">
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <span class="top-logo" aria-hidden="true">☕</span>
+        <div>
+          <h1 class="top-title">Doctor Coffee</h1>
+          <div class="top-meta">
+            <span id="sync-badge" class="sync-badge">
+              <span id="sync-dot" class="sync-dot"></span>
+              <span id="sync-text">Live</span>
+            </span>
+            <span class="dot-sep">•</span>
+            <span id="current-employee-name" class="employee-pill">Employee</span>
+          </div>
+        </div>
+      </div>
+      <div class="top-bar-actions">
+        <button id="export-csv-btn" type="button" class="btn btn-ghost btn-sm" title="Export CSV">
+          CSV
+        </button>
+        <button id="logout-btn" type="button" class="btn btn-ghost btn-sm">
+          Logout
+        </button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section class="stats-grid" aria-label="Loan Summary">
+        <div class="stat-card stat-unpaid">
+          <span class="stat-label">Outstanding</span>
+          <strong id="stat-unpaid-total" class="stat-value">$0.00</strong>
+          <span id="stat-unpaid-count" class="stat-sub">0 unpaid loans</span>
+        </div>
+        <div class="stat-card stat-paid">
+          <span class="stat-label">Collected</span>
+          <strong id="stat-paid-total" class="stat-value">$0.00</strong>
+          <span id="stat-paid-count" class="stat-sub">0 settled</span>
+        </div>
+      </section>
+
+      <section class="controls-bar">
+        <div class="search-wrap">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Search customer, item, or staff..."
+            aria-label="Search loans"
+          />
+          <button id="clear-search-btn" type="button" class="icon-btn hidden" aria-label="Clear search">
+            ✕
+          </button>
+        </div>
+
+        <div class="filter-pills" role="group" aria-label="Filter loans">
+          <button type="button" class="pill active" data-filter="all">All</button>
+          <button type="button" class="pill" data-filter="unpaid">Unpaid</button>
+          <button type="button" class="pill" data-filter="paid">Paid</button>
+          <button type="button" class="pill" data-filter="customers">By Customer</button>
+        </div>
+      </section>
+
+      <section aria-live="polite">
+        <div id="loans-loading" class="state-box">
+          <div class="spinner"></div>
+          <p>Syncing shared loans...</p>
+        </div>
+
+        <div id="loans-empty" class="state-box hidden">
+          <p class="empty-emoji">🧾</p>
+          <h3>No loans found</h3>
+          <p>Tap <strong>+ New Loan</strong> below to record a customer loan.</p>
+        </div>
+
+        <div id="loans-list" class="loans-list"></div>
+      </section>
+    </main>
+
+    <button id="fab-add-loan" type="button" class="fab" aria-label="Add new customer loan">
+      <span>+</span> New Loan
+    </button>
+  </div>
+
+  <div id="loan-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="loan-modal-title">
+    <div id="loan-modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2 id="loan-modal-title">New Customer Loan</h2>
+        <button id="loan-modal-close" type="button" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+
+      <form id="loan-form" novalidate>
+        <input id="loan-id" type="hidden" />
+
+        <div class="form-group">
+          <label for="loan-customer-name">Customer Name *</label>
+          <input
+            id="loan-customer-name"
+            type="text"
+            placeholder="e.g. Rami Haddad"
+            maxlength="80"
+            required
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="loan-amount">Amount *</label>
+            <input
+              id="loan-amount"
+              type="number"
+              inputmode="decimal"
+              step="0.01"
+              min="0.01"
+              placeholder="0.00"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="loan-status">Status</label>
+            <select id="loan-status">
+              <option value="unpaid">Unpaid</option>
+              <option value="paid">Paid</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="loan-customer-phone">Phone Number (Optional)</label>
+          <input
+            id="loan-customer-phone"
+            type="tel"
+            inputmode="tel"
+            placeholder="e.g. +961 70 123 456"
+            maxlength="30"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="loan-notes">Order / Notes (Optional)</label>
+          <textarea
+            id="loan-notes"
+            rows="2"
+            placeholder="e.g. 2 Iced Spanish Latte + Croissant"
+            maxlength="240"
+          ></textarea>
+        </div>
+
+        <div id="loan-audit-info" class="audit-box hidden"></div>
+        <div id="loan-form-error" class="alert alert-error hidden" role="alert"></div>
+
+        <div class="m
